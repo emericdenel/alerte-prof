@@ -1,0 +1,11 @@
+# Secrets et données personnelles : ne jamais publier
+.env
+session.json
+etat.json
+
+# Notes privées pour Claude Code (contiennent des infos sur mon lycée)
+CLAUDE.md
+.claude/
+
+node_modules/
+*.log

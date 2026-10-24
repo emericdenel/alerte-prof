@@ -1,0 +1,17 @@
+{
+  "name": "alerte-prof",
+  "version": "1.0.0",
+  "description": "Alerte Telegram quand un cours est annulé sur École Directe",
+  "license": "MIT",
+  "main": "surveiller.js",
+  "private": true,
+  "scripts": {
+    "configurer": "node configurer.js",
+    "test": "node test-detection.js",
+    "telegram": "node test-telegram.js",
+    "start": "node surveiller.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
