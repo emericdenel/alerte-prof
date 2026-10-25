@@ -115,6 +115,35 @@ Si le programme n'arrive plus à vérifier 3 fois de suite, il t'envoie un messa
 
 ---
 
+### Étape 9 bis (au choix) : le faire tourner en ligne sur Cloudflare, gratuitement
+
+À la place de l'autre tour, le programme peut tourner chez Cloudflare Workers (offre gratuite, sans carte bancaire). Cloudflare le lance toutes les 15 minutes ; l'état est gardé dans le stockage KV.
+
+Pourquoi pas GitHub Actions ? Les [conditions de GitHub](https://docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features) interdisent d'utiliser Actions « as part of a serverless application », et les tâches planifiées peuvent y être retardées ou sautées.
+
+1. Crée un compte sur https://dash.cloudflare.com/sign-up, puis connecte l'outil officiel :
+   ```
+   npx wrangler@4.150.0 login
+   ```
+2. Crée le stockage de l'état et recopie son `id` dans `wrangler.toml` (section `[[kv_namespaces]]`) :
+   ```
+   npx wrangler@4.150.0 kv namespace create ETAT
+   ```
+3. Déploie le Worker :
+   ```
+   npx wrangler@4.150.0 deploy
+   ```
+4. Envoie tes secrets (lus dans `.env` et `session.json`, jamais affichés) :
+   ```
+   node envoyer-secrets.js
+   ```
+5. Pour voir les vérifications en direct : `npx wrangler@4.150.0 tail alerte-prof`.
+6. **Arrête la surveillance sur le PC**, sinon chaque alerte arrive en double.
+
+Si École Directe repose la question de sécurité : relance `node configurer.js` sur le PC, puis `node envoyer-secrets.js`.
+
+Pour vérifier que Cloudflare peut joindre École Directe avant tout (avec un compte inventé) : `npx wrangler@4.150.0 deploy -c cloudflare/wrangler-test.toml`, ouvre l'adresse affichée (on attend « OK (505 comme prévu) »), puis supprime-le avec `npx wrangler@4.150.0 delete -c cloudflare/wrangler-test.toml`.
+
 ## Problèmes fréquents
 
 | Message | Cause probable | Que faire |
@@ -155,7 +184,12 @@ Si le programme n'arrive plus à vérifier 3 fois de suite, il t'envoie un messa
 | `voir-edt.js` | Affiche l'emploi du temps brut pour vérifier les champs |
 | `test-telegram.js` | Envoie un message de test |
 | `test-detection.js` | Teste la détection avec de faux cours |
-| `lib.js` | Fonctions communes |
+| `detection.js` | Détection des changements et texte des alertes (partagé PC / Cloudflare) |
+| `lib.js` | Fonctions pour le PC : `.env`, fichiers JSON, journal |
+| `worker.js` | Version Cloudflare Workers de la surveillance |
+| `wrangler.toml` | Configuration Cloudflare (toutes les 15 min, stockage KV, réglages) |
+| `envoyer-secrets.js` | Envoie les secrets à Cloudflare sans les afficher |
+| `cloudflare/` | Worker de test : Cloudflare peut-il joindre École Directe ? |
 | `ecoledirecte.js` | Client École Directe : cookie GTK, jetons, QCM, emploi du temps |
 | `connexion.js` | Connexion avec la session enregistrée |
 | `demarrer.bat` | Lancement automatique sous Windows |

@@ -17,6 +17,11 @@ const MESSAGES = {
   525: "Session expirée",
 };
 
+// Base64 <-> texte (UTF-8 pour les accents). atob/btoa existent dans Node 18+ et chez Cloudflare,
+// contrairement à Buffer qui n'existe que dans Node.
+const versBase64 = (texte) => btoa(String.fromCharCode(...new TextEncoder().encode(texte)));
+const depuisBase64 = (b64) => new TextDecoder().decode(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)));
+
 /** Crée une session vide : cookies, jeton de connexion et en-têtes à renvoyer. */
 function nouvelleSession() {
   return { cookies: new Map(), entetes: {}, eleveId: null };
@@ -101,13 +106,12 @@ async function connexion(session, identifiant, motDePasse, fa) {
 async function obtenirQCM(session) {
   const rep = await requete(session, "/connexion/doubleauth.awp", { verbe: "get" }, {});
   if (rep.code !== 200 || !rep.data) throw erreurED(rep.code, rep.message);
-  const decoder = (b64) => Buffer.from(b64, "base64").toString("utf8");
-  return { question: decoder(rep.data.question), propositions: rep.data.propositions.map(decoder) };
+  return { question: depuisBase64(rep.data.question), propositions: rep.data.propositions.map(depuisBase64) };
 }
 
 /** Envoie la réponse choisie (en texte). Renvoie { cn, cv } si elle est bonne. */
 async function repondreQCM(session, reponse) {
-  const choix = Buffer.from(reponse, "utf8").toString("base64");
+  const choix = versBase64(reponse);
   const rep = await requete(session, "/connexion/doubleauth.awp", { verbe: "post" }, { choix });
   if (rep.code !== 200 || !rep.data || !rep.data.cn) throw erreurED(rep.code, rep.message || "Réponse au QCM refusée");
   return { cn: rep.data.cn, cv: rep.data.cv };

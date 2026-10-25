@@ -1,0 +1,25 @@
+# Configuration Cloudflare Workers (version en ligne de la surveillance).
+# Déploiement : npx wrangler@4.150.0 deploy
+name = "alerte-prof"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+# Pas d'adresse web publique : le Worker ne fait que des vérifications planifiées.
+workers_dev = false
+
+# Toutes les 15 minutes (heure UTC). La pause de nuit (heure de Paris) est gérée dans worker.js.
+[triggers]
+crons = ["*/15 * * * *"]
+
+# Stockage de l'état (cours vus, alertes déjà envoyées). L'identifiant n'est pas un secret.
+[[kv_namespaces]]
+binding = "ETAT"
+id = "c9ff083504a647cbb7bb6987b4bca820"
+
+# Réglages non secrets. Les secrets se mettent avec : npx wrangler@4.150.0 secret put NOM
+# (ED_IDENTIFIANT, ED_MOT_DE_PASSE, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, ED_CN, ED_CV)
+[vars]
+JOURS_A_SURVEILLER = "7"
+ALERTER_MODIFICATIONS = "non"
+PAUSE_NUIT_DEBUT = "0"
+PAUSE_NUIT_FIN = "6"

@@ -9,3 +9,7 @@ CLAUDE.md
 
 node_modules/
 *.log
+
+# Cloudflare : fichiers locaux de wrangler (peuvent contenir des secrets)
+.dev.vars
+.wrangler/

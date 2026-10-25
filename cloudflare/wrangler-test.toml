@@ -1,0 +1,4 @@
+# Configuration du Worker de test (lancé avec : npx wrangler@4.150.0 dev --remote -c cloudflare/wrangler-test.toml)
+name = "alerte-prof-test"
+main = "test-connexion.js"
+compatibility_date = "2026-10-01"
