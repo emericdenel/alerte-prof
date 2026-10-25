@@ -138,6 +138,7 @@ Pourquoi pas GitHub Actions ? Les [conditions de GitHub](https://docs.github.com
    node envoyer-secrets.js
    ```
 5. Pour voir les vérifications en direct : `npx wrangler@4.150.0 tail alerte-prof`.
+   Déploiement automatique : le Worker est relié au dépôt GitHub (Workers & Pages → alerte-prof → Settings → Builds, commande `npx wrangler@4.150.0 deploy`). Chaque `git push` sur `main` le redéploie, sans toucher aux secrets.
 6. **Arrête la surveillance sur le PC**, sinon chaque alerte arrive en double.
 
 Si École Directe repose la question de sécurité : relance `node configurer.js` sur le PC, puis `node envoyer-secrets.js`.
