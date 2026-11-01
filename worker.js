@@ -5,6 +5,7 @@
 // - L'état (cours vus, alertes déjà envoyées, erreurs) est dans le stockage KV « ETAT ».
 import ed from "./ecoledirecte.js";
 import d from "./detection.js";
+import dv from "./devoirs.js";
 
 const CLE_ETAT = "etat";
 
@@ -56,6 +57,26 @@ async function verifier(env) {
 
     etat.signale = etat.signale.slice(-500);
     if (cours.length > 0) etat.derniersCours = cours.map(d.resumerCours); // liste vide = panne probable
+
+    // Devoirs : à part, pour qu'une panne du cahier de texte n'empêche pas les alertes de cours.
+    if ((env.ALERTER_DEVOIRS || "oui").toLowerCase() === "oui") {
+      try {
+        const r = await dv.verifierDevoirs(session, etat, {
+          maintenant, envoyer: telegram, enregistrer,
+          jourRecap: Number(env.RECAP_JOUR || 0), heureRecap: Number(env.RECAP_HEURE || 18),
+        });
+        etat.erreursDevoirs = 0;
+        console.log(`Devoirs : ${r.devoirs} à venir, ${r.nouveaux} nouveau(x)${r.recap ? ", récap envoyé" : ""}.`);
+      } catch (err) {
+        etat.erreursDevoirs = (etat.erreursDevoirs || 0) + 1;
+        console.log("Devoirs : échec :", err.message);
+        // Après 3 échecs de suite, on prévient une seule fois.
+        if (etat.erreursDevoirs === 3) {
+          await telegram(`⚠️ Je n'arrive plus à lire tes devoirs sur École Directe.\n${err.message}`).catch(() => {});
+        }
+      }
+    }
+
     if (etat.alerteErreurEnvoyee) await telegram("✅ Le programme fonctionne de nouveau.");
     etat.erreursDeSuite = 0;
     etat.alerteErreurEnvoyee = false;

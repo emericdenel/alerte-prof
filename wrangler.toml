@@ -23,3 +23,8 @@ JOURS_A_SURVEILLER = "7"
 ALERTER_MODIFICATIONS = "non"
 PAUSE_NUIT_DEBUT = "0"
 PAUSE_NUIT_FIN = "6"
+# Devoirs : un message dès qu'un nouveau devoir apparaît, et le récap des 7 jours suivants
+# chaque semaine (RECAP_JOUR : 0 = dimanche … 6 = samedi ; RECAP_HEURE en heure de Paris).
+ALERTER_DEVOIRS = "oui"
+RECAP_JOUR = "0"
+RECAP_HEURE = "18"

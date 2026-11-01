@@ -125,4 +125,27 @@ async function emploiDuTemps(session, debut, fin) {
   return rep.data;
 }
 
-module.exports = { nouvelleSession, connexion, obtenirQCM, repondreQCM, emploiDuTemps };
+/**
+ * Devoirs à venir (cahier de texte, à partir d'aujourd'hui). Renvoie un objet
+ * { "AAAA-MM-JJ": [ { matiere, codeMatiere, aFaire, idDevoir, donneLe, effectue, interrogation, ... } ] }.
+ * Même adresse et même corps que get_homeworks de la bibliothèque Python « ecoledirecte ».
+ */
+async function cahierDeTexte(session) {
+  const rep = await requete(session, `/Eleves/${session.eleveId}/cahierdetexte.awp`, { verbe: "get" }, {});
+  if (rep.code !== 200) throw erreurED(rep.code, rep.message);
+  return rep.data || {};
+}
+
+/**
+ * Détail des devoirs d'un jour "AAAA-MM-JJ" : renvoie { date, matieres: [...] }, où
+ * matieres[i].aFaire.contenu est le texte du devoir en base64 (du HTML une fois décodé).
+ */
+async function devoirsDuJour(session, date) {
+  const rep = await requete(session, `/Eleves/${session.eleveId}/cahierdetexte/${date}.awp`, { verbe: "get" }, {});
+  if (rep.code !== 200) throw erreurED(rep.code, rep.message);
+  return rep.data || { date, matieres: [] };
+}
+
+module.exports = {
+  nouvelleSession, connexion, obtenirQCM, repondreQCM, emploiDuTemps, cahierDeTexte, devoirsDuJour, depuisBase64,
+};

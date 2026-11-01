@@ -5,6 +5,7 @@ const {
 } = require("./lib");
 const { seConnecter } = require("./connexion");
 const { emploiDuTemps } = require("./ecoledirecte");
+const { verifierDevoirs } = require("./devoirs");
 
 chargerEnv();
 const MINUTES = Math.max(10, Number(process.env.INTERVALLE_MINUTES || 15)); // jamais moins de 10 min
@@ -12,10 +13,14 @@ const JOURS = Math.min(14, Math.max(1, Number(process.env.JOURS_A_SURVEILLER || 
 const AVEC_MODIFS = (process.env.ALERTER_MODIFICATIONS || "non").toLowerCase() === "oui";
 const PAUSE_DEBUT = Number(process.env.PAUSE_NUIT_DEBUT || 0); // heure (une ligne vide = valeur par défaut)
 const PAUSE_FIN = Number(process.env.PAUSE_NUIT_FIN || 6);
+const AVEC_DEVOIRS = (process.env.ALERTER_DEVOIRS || "oui").toLowerCase() === "oui";
+const RECAP_JOUR = Number(process.env.RECAP_JOUR || 0);    // 0 = dimanche … 6 = samedi
+const RECAP_HEURE = Number(process.env.RECAP_HEURE || 18);
 
 let ED = null;
 let erreursDeSuite = 0;
 let alerteErreurEnvoyee = false;
+let erreursDevoirs = 0;
 
 function enPauseNuit(d = new Date()) {
   const h = d.getHours();
@@ -68,6 +73,25 @@ async function verifier(premiere = false) {
     etat.signale = etat.signale.slice(-500); // on garde l'historique récent seulement
     if (cours.length > 0) etat.derniersCours = cours.map(resumerCours); // liste vide = panne probable, on garde l'ancienne
     else journal("École Directe a renvoyé un emploi du temps vide, on garde la version précédente.");
+
+    // Devoirs : à part, pour qu'une panne du cahier de texte n'empêche pas les alertes de cours.
+    if (AVEC_DEVOIRS) {
+      try {
+        const r = await verifierDevoirs(ED, etat, {
+          maintenant: new Date(), envoyer: envoyerTelegram, enregistrer: (e) => ecrireJSON(FICHIER_ETAT, e),
+          jourRecap: RECAP_JOUR, heureRecap: RECAP_HEURE,
+        });
+        erreursDevoirs = 0;
+        journal(`Devoirs : ${r.devoirs} à venir, ${r.nouveaux} nouveau(x)${r.recap ? ", récap envoyé" : ""}.`);
+      } catch (err) {
+        erreursDevoirs++;
+        journal("Devoirs : échec :", err && err.message);
+        if (erreursDevoirs === 3) {
+          await envoyerTelegram(`⚠️ Je n'arrive plus à lire tes devoirs sur École Directe.\n${err.message}`).catch(() => {});
+        }
+      }
+    }
+
     etat.derniereVerification = new Date().toISOString();
     ecrireJSON(FICHIER_ETAT, etat);
 

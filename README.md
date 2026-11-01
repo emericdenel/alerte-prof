@@ -2,6 +2,8 @@
 
 Un programme qui surveille mon emploi du temps École Directe et m'envoie un message Telegram quand un cours est annulé, remplacé par une autre matière, retiré de l'emploi du temps ou (en option) modifié.
 
+Il suit aussi mon **cahier de texte** : un message dès qu'un nouveau devoir ou un contrôle est ajouté, et chaque dimanche à 18 h la liste des devoirs des 7 jours suivants.
+
 Il parle à École Directe avec un petit client écrit pour le projet (`ecoledirecte.js`). Ce client n'est **pas officiel** : il reproduit les étapes de la bibliothèque Python [ecoledirecte](https://pypi.org/project/ecoledirecte/) et de la [documentation communautaire](https://github.com/EduWireApps/ecoledirecte-api-docs). Il peut cesser de marcher si École Directe change quelque chose.
 
 ---
@@ -145,6 +147,16 @@ Si École Directe repose la question de sécurité : relance `node configurer.js
 
 Pour vérifier que Cloudflare peut joindre École Directe avant tout (avec un compte inventé) : `npx wrangler@4.150.0 deploy -c cloudflare/wrangler-test.toml`, ouvre l'adresse affichée (on attend « OK (505 comme prévu) »), puis supprime-le avec `npx wrangler@4.150.0 delete -c cloudflare/wrangler-test.toml`.
 
+## Les devoirs
+
+À chaque vérification, le programme lit aussi le cahier de texte (la liste des devoirs à venir) :
+
+- **nouveau devoir** (ou contrôle) → message `📚 Nouveau devoir : MATIÈRE` (ou `📝 Contrôle annoncé`), avec la date et le texte du devoir ;
+- **chaque dimanche à 18 h** → `🗓️ Devoirs du lundi … au dimanche …`, groupés par jour (`📝` = contrôle, `✅` = coché « fait » sur École Directe) ;
+- **tout premier lancement** → les devoirs déjà notés ne sont pas annoncés un par un : le récap de la semaine arrive directement.
+
+Le texte d'un devoir demande une requête de plus par jour concerné, seulement quand il y a un nouveau devoir ou un récap à envoyer. Pour voir ce que renvoie École Directe : `node voir-devoirs.js`. Tests : `node test-devoirs.js`.
+
 ## Problèmes fréquents
 
 | Message | Cause probable | Que faire |
@@ -167,6 +179,10 @@ Pour vérifier que Cloudflare peut joindre École Directe avant tout (avec un co
 | `JOURS_A_SURVEILLER` | Nombre de jours surveillés à partir d'aujourd'hui (1 à 14) | 7 |
 | `ALERTER_MODIFICATIONS` | `oui` pour être prévenu aussi des changements de salle ou d'horaire | non |
 | `PAUSE_NUIT_DEBUT` / `PAUSE_NUIT_FIN` | Heures sans vérification | 0 / 6 |
+| `ALERTER_DEVOIRS` | `non` pour ne plus suivre les devoirs | oui |
+| `RECAP_JOUR` / `RECAP_HEURE` | Jour (0 = dimanche … 6 = samedi) et heure du récap des devoirs de la semaine | 0 / 18 |
+
+Sur Cloudflare, ces réglages sont dans la section `[vars]` de `wrangler.toml` (un `git push` les applique).
 
 ## Sécurité et limites
 
@@ -186,6 +202,9 @@ Pour vérifier que Cloudflare peut joindre École Directe avant tout (avec un co
 | `test-telegram.js` | Envoie un message de test |
 | `test-detection.js` | Teste la détection avec de faux cours |
 | `detection.js` | Détection des changements et texte des alertes (partagé PC / Cloudflare) |
+| `devoirs.js` | Devoirs : nouveaux devoirs, récap de la semaine, texte des messages (partagé PC / Cloudflare) |
+| `voir-devoirs.js` | Affiche les devoirs bruts pour vérifier les champs |
+| `test-devoirs.js` | Teste les devoirs avec un faux École Directe |
 | `lib.js` | Fonctions pour le PC : `.env`, fichiers JSON, journal |
 | `worker.js` | Version Cloudflare Workers de la surveillance |
 | `wrangler.toml` | Configuration Cloudflare (toutes les 15 min, stockage KV, réglages) |
